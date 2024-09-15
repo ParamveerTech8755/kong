@@ -1,22 +1,36 @@
 import {createDOM} from "./create.js"
 
-let nextUnitOfWork = null
-let wipRoot = null
-let currentRoot = null
+const tree = {
+	nextUnitOfWork: null,
+	currentRoot: null,
+	wipRoot: null
+}
+
+const hooks = {
+	wipFibre: null,
+	hookIndex: 0,
+	modify: false
+}
+
 let deletionQueue = []
 
-
-
 const commitRoot = () => {
-	commitWork(wipRoot)
-	currentRoot = wipRoot
-	wipRoot = null
+	commitWork(tree.wipRoot)
+	tree.currentRoot = tree.wipRoot
+	tree.wipRoot = null
 	deletionQueue.forEach(fibre => {
 		let parentFibre = fibre.parent
 		while(!parentFibre.dom)
 			parentFibre = parentFibre.parent
 		parentFibre.dom.removeChild(fibre.dom)
 	})
+	if(hooks.modify){
+		renderRoot(tree.currentRoot, tree.currentRoot.parent.dom)
+		tree.wipRoot = tree.currentRoot
+		tree.nextUnitOfWork = tree.wipRoot
+		requestIdleCallback(workLoop)
+		hooks.modify = false
+	}
 }
 
 
@@ -32,6 +46,9 @@ const commitWork = fibre => {
 	}
 	else if(tag === 'update'){
 		//we can remove all the previous attributes here
+
+		if(fibre.element.type === "TEXT_NODE")
+			fibre.dom.nodeValue = fibre.element.nodeValue
 
 		Object.keys(fibre.element.props).forEach(key => {
 			if(key !== 'children'){
@@ -56,23 +73,25 @@ const renderRoot = (element, parent) => {
 			dom: parent
 		},
 		element,
-		alternate: currentRoot,
+		alternate: tree.currentRoot,
 		sibling: null,
 		child: null
 	}
-	wipRoot = root
-	nextUnitOfWork = root
+
+	tree.wipRoot = root
+	tree.nextUnitOfWork = root
 	requestIdleCallback(workLoop)
 }
 
 const workLoop = deadline => {
-	while(deadline.timeRemaining() > 1 && nextUnitOfWork)
-		nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
-	if(nextUnitOfWork)
+	while(deadline.timeRemaining() > 1 && tree.nextUnitOfWork)
+		tree.nextUnitOfWork = performUnitOfWork(tree.nextUnitOfWork)
+	if(tree.nextUnitOfWork)
 		requestIdleCallback(workLoop)
-	else if(wipRoot)
+	else if(tree.wipRoot)
 		commitRoot()
 }
+
 
 
 const performUnitOfWork = fibre => {
@@ -83,7 +102,11 @@ const performUnitOfWork = fibre => {
 
 	if(element.type instanceof Function){
 
-		// fibre.element = element = element.type(element.props)
+		hooks.wipFibre = fibre
+		hooks.hookIndex = 0
+		hooks.wipFibre.state = alternate ? alternate.state : []
+		
+		// fibre for the child
 		const newFibre = {
 			parent: fibre,
 			element: element.type(element.props),
@@ -103,8 +126,8 @@ const performUnitOfWork = fibre => {
 			fibre.dom = createDOM(element)
 		}
 		else if(alternate.element.type === element.type){
-			
 			fibre.effectTag = "update"
+			fibre.dom = alternate.dom
 		}
 		else{
 			fibre.effectTag = "create"
@@ -113,7 +136,14 @@ const performUnitOfWork = fibre => {
 			fibre.alternate = null
 		}
 
-		const oldChildren = alternate ? alternate.element.props.children : []
+		const oldChildren = []
+		if(alternate){
+			let ele = alternate.child
+			while(ele){
+				oldChildren.push(ele)
+				ele = ele.sibling
+			}
+		}
 
 		let prev = null
 		props.children.forEach((child, ind) => {
@@ -153,10 +183,6 @@ const performUnitOfWork = fibre => {
 
 	}
 
-
-
-
-
 	//now find for the nextUnitOfWork.. fine
 	if(fibre.child)
 		return fibre.child
@@ -172,4 +198,4 @@ const performUnitOfWork = fibre => {
 }
 
 
-export {renderRoot}
+export {renderRoot, hooks, tree, workLoop}

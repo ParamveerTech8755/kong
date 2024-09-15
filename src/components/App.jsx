@@ -14,6 +14,8 @@ function App(){
 		<div>
 			<p>Hello there buddy</p>
 			<Test />
+			<Test />
+			<Test />
 		</div>
 		<table>
 			<tbody>

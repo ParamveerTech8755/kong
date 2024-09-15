@@ -1,7 +1,7 @@
-##Kong##
+## Kong ##
 A reconciler similar to react, built from sratch
 
-###How To Run###
+### How To Run ###
 Clone the project locally, navigate to the project folder and run the following commands
 
 1. npm install

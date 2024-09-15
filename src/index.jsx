@@ -1,5 +1,7 @@
 import App from "./components/App.jsx"
-import {createRoot} from "../kong/create.js"
-import {render} from "../kong/render.js"
+import {createRoot, createElement} from "../kong/create.js"
+import {renderRoot} from "../kong/render.js"
+// import Kong from "../kong/kong.js"
 
-render(App, createRoot())
+/**@jsx createElement */
+renderRoot(<App/>, createRoot())

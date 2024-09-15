@@ -1,8 +1,11 @@
 ## Kong ##
 A reconciler similar to react, built from sratch
 
-### How To Run ###
-Clone the project locally, navigate to the project folder and run the following commands
+## Purpose: ##
+Basic understanding of underlying implementation of reconcilers.
 
-1. npm install
-2. npm run dev
+
+<h2>How to Run:</h2>
+1. Clone the github repo using 'git clone https://github.com/ParamveerTech8755/Reconciler.git' command in terminal
+2. Run command 'npm install'
+3. Run command 'npm run dev'
